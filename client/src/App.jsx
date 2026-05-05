@@ -50,6 +50,7 @@ const Layout = ({ children }) => {
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       <main 
         className="mt-[60px] h-[calc(100vh-60px)] overflow-y-auto"
+        data-rbd-scroll-container
       >
         <div className="p-4 lg:p-8 min-h-full">
           {children}

@@ -56,10 +56,10 @@ const ProjectDetail = () => {
 
   return (
     <div 
-      className="min-h-screen -m-4 lg:-m-8 p-4 lg:p-8 space-y-8 animate-in fade-in duration-500 transition-colors duration-1000"
+      className="min-h-screen -m-4 lg:-m-8 p-4 lg:p-8 flex flex-col animate-in fade-in duration-500 transition-colors duration-1000"
       style={{ backgroundColor: `${projectBg}15` }}
     >
-      <div className="max-w-[1600px] mx-auto space-y-8">
+      <div className="max-w-[1600px] w-full mx-auto flex flex-col space-y-8">
         <div className="flex flex-col gap-6 bg-white dark:bg-[#1e1f21] p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-2" style={{ backgroundColor: projectBg }} />
           

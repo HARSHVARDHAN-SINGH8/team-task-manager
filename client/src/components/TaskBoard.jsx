@@ -300,13 +300,16 @@ const TaskBoard = ({ tasks, projectId, isAdmin, members, columns = [], onTaskUpd
         )}
       </div>
 
-      <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4 custom-scrollbar">
-        <DragDropContext onDragEnd={onDragEnd}>
-          <div className="flex gap-6 h-full items-start px-1">
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div 
+          className="flex-1 overflow-x-auto overflow-y-visible pb-4 custom-scrollbar"
+          data-rbd-scroll-container
+        >
+          <div className="flex gap-6 items-start px-1 min-w-max">
             {columns.map(column => (
               <div 
                 key={column.id} 
-                className="bg-slate-100/50 dark:bg-[#101214] rounded-2xl flex flex-col w-[320px] min-w-[320px] max-h-full border border-slate-200/50 dark:border-[#2b2d30] shadow-sm transition-all"
+                className="bg-slate-100/50 dark:bg-[#101214] rounded-2xl flex flex-col w-[320px] min-w-[320px] border border-slate-200/50 dark:border-[#2b2d30] shadow-sm transition-all"
               >
                 {/* Column Header */}
                 <div className="px-5 py-4 flex items-center justify-between">
@@ -378,7 +381,9 @@ const TaskBoard = ({ tasks, projectId, isAdmin, members, columns = [], onTaskUpd
                 </div>
                 
                 {/* Task List */}
-                <div className="flex-1 overflow-y-auto px-2 pb-2 custom-scrollbar min-h-[50px]">
+                <div 
+                  className="flex-1 px-2 pb-2 min-h-[50px]"
+                >
                   <Droppable droppableId={column.id.toString()}>
                     {(provided, snapshot) => (
                       <div
@@ -471,8 +476,8 @@ const TaskBoard = ({ tasks, projectId, isAdmin, members, columns = [], onTaskUpd
               </button>
             )}
           </div>
-        </DragDropContext>
-      </div>
+        </div>
+      </DragDropContext>
 
       {/* Task Modal */}
       {showModal && (
