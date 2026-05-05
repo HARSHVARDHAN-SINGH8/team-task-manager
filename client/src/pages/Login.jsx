@@ -18,7 +18,14 @@ const Login = () => {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/home');
+      // Check for pending invite link
+      const pendingInvite = localStorage.getItem('pendingInvite');
+      if (pendingInvite) {
+        localStorage.removeItem('pendingInvite');
+        navigate(`/join/${pendingInvite}`);
+      } else {
+        navigate('/home');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid email or password');
     } finally {

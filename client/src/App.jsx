@@ -17,6 +17,7 @@ import Home from './pages/Home';
 import Inbox from './pages/Inbox';
 import Reporting from './pages/Reporting';
 import ForgotPassword from './pages/ForgotPassword';
+import JoinProject from './pages/JoinProject';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = React.useContext(AuthContext);
@@ -72,6 +73,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/join/:token" element={<JoinProject />} />
 
                 {/* Protected routes - WITH navbar/sidebar via Layout */}
                 <Route path="/*" element={

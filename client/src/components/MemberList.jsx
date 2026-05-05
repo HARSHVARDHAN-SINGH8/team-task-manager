@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
-import { UserPlus, UserMinus, Shield, Search, ChevronDown, Check, X, User, Globe, Lock } from 'lucide-react';
+import { UserPlus, UserMinus, Shield, Search, ChevronDown, Check, X, User, Globe, Lock, Link2, Copy } from 'lucide-react';
 import api from '../api/axios';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -37,6 +37,10 @@ const MemberList = ({ projectId, members, isAdmin, onMemberUpdated, isOpen, onCl
   const [loading, setLoading] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(null);
   const [isPublic, setIsPublic] = useState(false); // Placeholder for visibility toggle
+  const [inviteLink, setInviteLink] = useState('');
+  const [inviteRole, setInviteRole] = useState('viewer');
+  const [generatingLink, setGeneratingLink] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const dropdownRef = useRef(null);
 
@@ -92,6 +96,27 @@ const MemberList = ({ projectId, members, isAdmin, onMemberUpdated, isOpen, onCl
         }
       }
     });
+  };
+
+  const handleGenerateLink = async () => {
+    setGeneratingLink(true);
+    try {
+      const res = await api.post(`/projects/${projectId}/invite-link`, { role: inviteRole });
+      const baseUrl = window.location.origin;
+      setInviteLink(`${baseUrl}/join/${res.data.token}`);
+      setLinkCopied(false);
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Error generating invite link', 'error');
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(inviteLink);
+    setLinkCopied(true);
+    showToast('Invite link copied to clipboard!', 'success');
+    setTimeout(() => setLinkCopied(false), 3000);
   };
 
   return (
@@ -171,6 +196,63 @@ const MemberList = ({ projectId, members, isAdmin, onMemberUpdated, isOpen, onCl
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* Section: Invite Link */}
+          {isAdmin && (
+            <div className="space-y-4 bg-gray-50/50 dark:bg-[#1a1a2e]/30 p-5 rounded-2xl border border-gray-100 dark:border-[#2a2a3e]/50">
+              <div className="flex items-center gap-2 mb-1">
+                <Link2 size={16} className="text-emerald-500" />
+                <h3 className="text-xs font-black dark:text-[#9ca3af] text-gray-500 uppercase tracking-[0.15em]">Share invite link</h3>
+              </div>
+              
+              <div className="flex gap-2.5">
+                <div className="relative flex-1">
+                  <select
+                    value={inviteRole}
+                    onChange={e => setInviteRole(e.target.value)}
+                    className="w-full appearance-none dark:bg-[#0f0f0f] bg-white border border-gray-200 dark:border-[#2a2a3e] dark:focus:border-emerald-500 focus:border-emerald-500 rounded-xl pl-4 pr-10 py-3 text-sm outline-none dark:text-white cursor-pointer shadow-sm transition-all"
+                  >
+                    {roles.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+                
+                <button
+                  onClick={handleGenerateLink}
+                  disabled={generatingLink}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all active:scale-95 disabled:opacity-40 shadow-lg shadow-emerald-500/20 whitespace-nowrap"
+                >
+                  {generatingLink ? '...' : 'Generate'}
+                </button>
+              </div>
+
+              {inviteLink && (
+                <div className="flex items-center gap-2 mt-3">
+                  <input
+                    type="text"
+                    readOnly
+                    value={inviteLink}
+                    className="flex-1 px-3 py-2.5 dark:bg-[#0f0f0f] bg-white border border-gray-200 dark:border-[#2a2a3e] rounded-xl text-xs dark:text-gray-300 text-gray-600 truncate outline-none"
+                  />
+                  <button
+                    onClick={handleCopyLink}
+                    className={`p-2.5 rounded-xl transition-all active:scale-95 ${
+                      linkCopied
+                        ? 'bg-green-500/10 text-green-500'
+                        : 'bg-gray-100 dark:bg-[#2a2a3e] hover:bg-indigo-500/10 hover:text-indigo-500 text-gray-500'
+                    }`}
+                    title="Copy link"
+                  >
+                    {linkCopied ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+              )}
+
+              <p className="text-[10px] dark:text-[#6b7280] text-gray-400 mt-1">
+                Link expires in 7 days. Anyone with an account can join using this link.
+              </p>
             </div>
           )}
 

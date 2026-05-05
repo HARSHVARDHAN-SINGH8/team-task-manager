@@ -207,4 +207,108 @@ router.delete('/:id/members/:userId', requireAdmin, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// ============ INVITE LINK SYSTEM ============
+
+// Generate invite link (admin only)
+router.post('/:id/invite-link', requireAdmin, async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const { role = 'viewer' } = req.body;
+
+    // Generate a random token
+    const crypto = await import('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+
+    // Expire in 7 days
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    // Ensure invite_tokens table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS invite_tokens (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        project_id INT NOT NULL,
+        token VARCHAR(255) NOT NULL UNIQUE,
+        role ENUM('admin','editor','commenter','viewer') DEFAULT 'viewer',
+        created_by INT NOT NULL,
+        expires_at DATETIME NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    `);
+
+    await pool.query(
+      'INSERT INTO invite_tokens (project_id, token, role, created_by, expires_at) VALUES (?, ?, ?, ?, ?)',
+      [projectId, token, role, req.user.id, expiresAt]
+    );
+
+    res.status(201).json({ token, expiresAt });
+  } catch (error) { next(error); }
+});
+
+// Join project via invite token (any authenticated user)
+router.post('/join/:token', async (req, res, next) => {
+  try {
+    const { token } = req.params;
+
+    // Ensure invite_tokens table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS invite_tokens (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        project_id INT NOT NULL,
+        token VARCHAR(255) NOT NULL UNIQUE,
+        role ENUM('admin','editor','commenter','viewer') DEFAULT 'viewer',
+        created_by INT NOT NULL,
+        expires_at DATETIME NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    `);
+
+    // Look up the token
+    const [tokens] = await pool.query(
+      'SELECT * FROM invite_tokens WHERE token = ? AND expires_at > NOW()',
+      [token]
+    );
+
+    if (tokens.length === 0) {
+      return res.status(400).json({ message: 'Invalid or expired invite link.' });
+    }
+
+    const invite = tokens[0];
+
+    // Check if user is already a member
+    const [existing] = await pool.query(
+      'SELECT id FROM project_members WHERE project_id = ? AND user_id = ?',
+      [invite.project_id, req.user.id]
+    );
+
+    if (existing.length > 0) {
+      return res.json({ message: 'You are already a member of this project.', projectId: invite.project_id, alreadyMember: true });
+    }
+
+    // Add user to the project
+    await pool.query(
+      'INSERT INTO project_members (project_id, user_id, role) VALUES (?, ?, ?)',
+      [invite.project_id, req.user.id, invite.role]
+    );
+
+    await pool.query(
+      'INSERT INTO activity_logs (project_id, user_id, action) VALUES (?, ?, ?)',
+      [invite.project_id, req.user.id, `Joined via invite link as ${invite.role}`]
+    );
+
+    // Get project name for the response
+    const [projects] = await pool.query('SELECT name FROM projects WHERE id = ?', [invite.project_id]);
+
+    res.json({ 
+      message: `Successfully joined project!`, 
+      projectId: invite.project_id,
+      projectName: projects[0]?.name,
+      role: invite.role 
+    });
+  } catch (error) { next(error); }
+});
+
 export default router;

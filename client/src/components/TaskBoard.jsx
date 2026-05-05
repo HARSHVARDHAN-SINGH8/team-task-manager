@@ -481,7 +481,10 @@ const TaskBoard = ({ tasks, projectId, isAdmin, members, columns = [], onTaskUpd
 
       {/* Task Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200] animate-in fade-in duration-200">
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200] animate-in fade-in duration-200"
+          onClick={(e) => e.target === e.currentTarget && closeModal()}
+        >
           <div className="bg-white dark:bg-[#1e1f21] rounded-2xl p-6 md:p-8 w-full max-w-lg shadow-2xl border border-gray-100 dark:border-gray-800 scale-100 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-black text-gray-800 dark:text-white tracking-tight">
