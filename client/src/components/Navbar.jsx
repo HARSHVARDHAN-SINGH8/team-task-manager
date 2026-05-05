@@ -45,10 +45,10 @@ const Navbar = ({ toggleSidebar }) => {
     setShowResults(false);
   };
 
-  const handleResultClick = (path) => {
+  const handleResultClick = (path, state = {}) => {
     setShowResults(false);
     setQuery('');
-    navigate(path);
+    navigate(path, { state });
   };
 
   if (!user) {
@@ -127,7 +127,7 @@ const Navbar = ({ toggleSidebar }) => {
                       {results.tasks.map(t => (
                         <button 
                           key={t.id}
-                          onClick={() => handleResultClick(`/projects/${t.project_id}`)}
+                          onClick={() => handleResultClick(`/projects/${t.project_id}`, { openTaskId: t.id })}
                           className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-[#2b2d30] rounded-xl text-sm text-gray-700 dark:text-gray-200 text-left"
                         >
                           <CheckCircle size={16} className="text-green-500" />

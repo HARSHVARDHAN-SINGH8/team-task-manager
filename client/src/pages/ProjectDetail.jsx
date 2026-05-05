@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { AuthContext } from '../contexts/AuthContext';
 import TaskBoard from '../components/TaskBoard';
@@ -12,10 +12,16 @@ import { Share2, Users, Layout, BarChart2, Activity } from 'lucide-react';
 
 const ProjectDetail = () => {
   const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [editedDesc, setEditedDesc] = useState('');
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [activeTab, setActiveTab] = useState('board');
@@ -28,6 +34,15 @@ const ProjectDetail = () => {
       ]);
       setProject(projRes.data);
       setTasks(tasksRes.data);
+      setEditedName(projRes.data.name);
+      setEditedDesc(projRes.data.description || '');
+      
+      // Handle openTaskId from navigation state
+      if (location.state?.openTaskId) {
+        setSelectedTaskId(location.state.openTaskId);
+        // Clear state to avoid re-opening on refresh
+        navigate(location.pathname, { replace: true, state: {} });
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -37,14 +52,25 @@ const ProjectDetail = () => {
 
   useEffect(() => {
     fetchProjectData();
-  }, [id]);
+  }, [id, location.state?.openTaskId]);
+
+  const handleUpdateProject = async (updates) => {
+    try {
+      await api.put(`/projects/${id}`, updates);
+      setProject(prev => ({ ...prev, ...updates }));
+      if (updates.name) setEditedName(updates.name);
+      if (updates.description) setEditedDesc(updates.description);
+    } catch (error) {
+      console.error('Error updating project:', error);
+    }
+  };
 
   const handleColorChange = async (color) => {
     try {
-      await api.put(`/projects/${id}`, { background_color: color });
-      setProject({ ...project, background_color: color });
+      await api.put(`/projects/${id}/theme`, { color });
+      setProject(prev => ({ ...prev, personal_color: color }));
     } catch (error) {
-      console.error('Error updating color:', error);
+      console.error('Error updating personal theme:', error);
     }
   };
 
@@ -52,7 +78,7 @@ const ProjectDetail = () => {
   if (!project) return <div className="p-8">Project not found</div>;
 
   const isAdmin = project.members.some(m => m.id === user.id && m.role === 'admin');
-  const projectBg = project.background_color || '#3b82f6';
+  const projectBg = project.personal_color || project.background_color || '#3b82f6';
 
   return (
     <div 
@@ -69,25 +95,64 @@ const ProjectDetail = () => {
                 <div className="p-3 bg-gray-50 dark:bg-[#2b2d30] rounded-2xl border border-gray-100 dark:border-gray-800">
                   <Layout className="text-blue-600" size={28} />
                 </div>
-                <div>
+                <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{project.name}</h1>
-                    {isAdmin && (
-                      <div className="relative group">
-                        <div 
-                          className="w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 shadow-sm cursor-pointer hover:scale-110 transition-transform"
-                          style={{ backgroundColor: projectBg }}
-                        />
-                        <input 
-                          type="color" 
-                          value={projectBg}
-                          onChange={(e) => handleColorChange(e.target.value)}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                        />
-                      </div>
+                    {isAdmin && isEditingName ? (
+                      <input
+                        autoFocus
+                        className="text-3xl font-black text-gray-900 dark:text-white tracking-tight bg-transparent border-b-2 border-blue-500 outline-none w-full max-w-md"
+                        value={editedName}
+                        onChange={(e) => setEditedName(e.target.value)}
+                        onBlur={() => {
+                          setIsEditingName(false);
+                          if (editedName !== project.name) handleUpdateProject({ name: editedName });
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
+                      />
+                    ) : (
+                      <h1 
+                        onClick={() => isAdmin && setIsEditingName(true)}
+                        className={`text-3xl font-black text-gray-900 dark:text-white tracking-tight ${isAdmin ? 'cursor-text hover:text-blue-600 transition-colors' : ''}`}
+                      >
+                        {project.name}
+                      </h1>
                     )}
+                    
+                    {/* Color picker available for ALL members now */}
+                    <div className="relative group">
+                      <div 
+                        className="w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 shadow-sm cursor-pointer hover:scale-110 transition-transform"
+                        style={{ backgroundColor: projectBg }}
+                      />
+                      <input 
+                        type="color" 
+                        value={projectBg}
+                        onChange={(e) => handleColorChange(e.target.value)}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </div>
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">{project.description}</p>
+                  
+                  {isAdmin && isEditingDesc ? (
+                    <input
+                      autoFocus
+                      className="text-gray-500 dark:text-gray-400 font-medium text-sm bg-transparent border-b border-gray-300 dark:border-gray-700 outline-none w-full max-w-lg mt-1"
+                      value={editedDesc}
+                      onChange={(e) => setEditedDesc(e.target.value)}
+                      onBlur={() => {
+                        setIsEditingDesc(false);
+                        if (editedDesc !== project.description) handleUpdateProject({ description: editedDesc });
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
+                    />
+                  ) : (
+                    <p 
+                      onClick={() => isAdmin && setIsEditingDesc(true)}
+                      className={`text-gray-500 dark:text-gray-400 font-medium text-sm mt-1 ${isAdmin ? 'cursor-text hover:text-gray-700 dark:hover:text-gray-200 transition-colors' : ''}`}
+                    >
+                      {project.description || (isAdmin ? 'Add a description...' : '')}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

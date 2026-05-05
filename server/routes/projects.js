@@ -80,10 +80,21 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// Get single project with members list
+// Get single project with members list and personalized settings
 router.get('/:id', async (req, res, next) => {
   try {
-    const [projects] = await pool.query('SELECT * FROM projects WHERE id = ?', [req.params.id]);
+    // Ensure background_color column exists in project_members (migration-on-the-fly)
+    try {
+      await pool.query('ALTER TABLE project_members ADD COLUMN background_color VARCHAR(50) DEFAULT NULL');
+    } catch (e) { /* ignore if already exists */ }
+
+    const [projects] = await pool.query(`
+      SELECT p.*, pm.role, pm.background_color as personal_color 
+      FROM projects p
+      LEFT JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ?
+      WHERE p.id = ?
+    `, [req.user.id, req.params.id]);
+
     if (projects.length === 0) return res.status(404).json({ message: 'Project not found' });
 
     const [members] = await pool.query(`
@@ -96,6 +107,45 @@ router.get('/:id', async (req, res, next) => {
     const [columns] = await pool.query('SELECT * FROM project_columns WHERE project_id = ? ORDER BY position ASC', [req.params.id]);
 
     res.json({ ...projects[0], members, columns });
+  } catch (error) { next(error); }
+});
+
+// Update project (admin only)
+router.put('/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const { name, description, background_color } = req.body;
+    
+    // Get existing project to keep old values if not provided
+    const [existing] = await pool.query('SELECT * FROM projects WHERE id = ?', [req.params.id]);
+    if (existing.length === 0) return res.status(404).json({ message: 'Project not found' });
+    
+    const updatedName = name !== undefined ? name : existing[0].name;
+    const updatedDesc = description !== undefined ? description : existing[0].description;
+    const updatedColor = background_color !== undefined ? background_color : existing[0].background_color;
+
+    await pool.query(
+      'UPDATE projects SET name = ?, description = ?, background_color = ? WHERE id = ?',
+      [updatedName, updatedDesc, updatedColor, req.params.id]
+    );
+
+    await pool.query(
+      'INSERT INTO activity_logs (project_id, user_id, action) VALUES (?, ?, ?)',
+      [req.params.id, req.user.id, 'Updated project details']
+    );
+
+    res.json({ message: 'Project updated' });
+  } catch (error) { next(error); }
+});
+
+// Update personal theme for a project (any member)
+router.put('/:id/theme', async (req, res, next) => {
+  try {
+    const { color } = req.body;
+    await pool.query(
+      'UPDATE project_members SET background_color = ? WHERE project_id = ? AND user_id = ?',
+      [color, req.params.id, req.user.id]
+    );
+    res.json({ message: 'Personal theme updated' });
   } catch (error) { next(error); }
 });
 
