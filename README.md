@@ -69,15 +69,25 @@
 
 ## Demo Screenshots
 
-> *(Replace placeholder URLs with actual screenshots when available)*
 
-![Dashboard Overview](https://via.placeholder.com/1200x600?text=Dashboard+Overview)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/cb9e68a9-f6ab-4943-80cb-12d03c9adcb2" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f12a4f57-b7a4-4e80-ba47-4710b7f64b3b" />
+
 *Dashboard with project summary, progress bars, and activity feed*
 
-![Kanban Board](https://via.placeholder.com/1200x600?text=Kanban+Board)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/9b1df15e-ea7e-45ca-b127-cac36831b81c" />
+<img width="512" height="663" alt="image" src="https://github.com/user-attachments/assets/f630994d-f0d0-40b5-b4f4-1c2282158a21" />
+
 *Kanban board with drag‑and‑drop columns and tasks*
 
-![Invite Link Modal](https://via.placeholder.com/1200x600?text=Invite+Link+Modal)
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a4ecddad-77ea-4597-90a4-3372e3105371" />
+
+*Task cards details*
+
+<img width="472" height="1079" alt="image" src="https://github.com/user-attachments/assets/1a401c09-f4ec-4f71-bf02-489522d50deb" />
+<img width="466" height="454" alt="image" src="https://github.com/user-attachments/assets/57bc0caa-7ad6-4a44-a07e-8814e73d18f6" />
+
 *Invite link generation modal with role selector*
 
 ---
