@@ -26,10 +26,10 @@
 
 | Layer | Technology | Why it was chosen |
 |-------|------------|-------------------|
-| **Frontend** | **React 18** + **Vite** | Lightning‑fast dev server, native ES modules, excellent HMR. |
-| | **Vanilla CSS** (custom design system) | Full control over premium UI aesthetics (glassmorphism, dark mode, micro‑animations). |
+| **Frontend** | **React 19** + **Vite** | Latest React features, lightning‑fast dev server. |
+| | **Tailwind CSS v4** | Modern utility‑first styling with high performance and zero‑config. |
 | | **React Context** (Auth, Theme, Notification, Search) | Lightweight global state without Redux overhead. |
-| | **React‑Beautiful‑Dnd** (or native HTML5 DnD) | Drag‑and‑drop Kanban board with smooth animations. |
+| | **@hello-pangea/dnd** | Robust Drag‑and‑drop Kanban board support for React 19. |
 | **Backend** | **Node.js 20** + **Express** | Minimalist, performant HTTP API. |
 | | **MySQL 8** (via **mysql2/promise**) | Relational data model, strong ACID guarantees for tasks & permissions. |
 | | **JWT** (jsonwebtokens) | Stateless authentication, easy to integrate with Railway’s environment variables. |
@@ -286,4 +286,4 @@ This project is licensed under the **MIT License** – see the `LICENSE` file fo
 
 ---
 
-*Happy coding! 🎉*
+*Happy coding! *
